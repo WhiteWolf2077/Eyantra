@@ -1,5 +1,5 @@
+import serial
 import numpy as np
-import imutils
 import cv2
 import cv2.aruco as aruco1
 import aruco_lib as aruco
@@ -10,7 +10,7 @@ import RPi.GPIO as GPIO
 
 
 ###################################################################################   SETUP    #########
-GPIO.cleanup()
+GPIO.setwarnings(False)
 camera = PiCamera()       # Picam setup
 GPIO.setmode(GPIO.BOARD)  # Setup for PI
 #GPIO.setup(3,GPIO.OUT)   # SERVO connection
@@ -33,8 +33,8 @@ GPIO.setup(Motor2E,GPIO.OUT) ####
 left = GPIO.PWM(Motor1E, 1000)  ## Value input of Pwm for A
 right = GPIO.PWM(Motor2E, 1000) ## Value input of Pwm for B
 
-left.start(25)  ## Duty cycle for A
-right.start(25) ## Duty cycle for B
+left.start(0)  ## Duty cycle for A
+right.start(0) ## Duty cycle for B
 Y = 0 ## Set up the y coordinate
 
 ####################################################################################              Function to setup the angle for servo                     ####
@@ -52,10 +52,10 @@ def snap(i):
 
    camera.start_preview()
    sleep(10)
-   camera.capture('/home/pi/Desktop/image'+str(i)'.jpg')
+   camera.capture('/home/pi/Desktop/image'+str(i)+'.jpg')
    
    camera.stop_preview()
-   break
+   
 
 ################################################################################
 ####             Aruco Detection                                         #######
@@ -78,9 +78,10 @@ def aruco_detect(path_to_image,i):
        cv2.destroyAllWindows()
 ##################################################################################################################################################################        Main Function  #####
 if __name__ == "__main__":
-	
+   time.sleep(5) 
    while True:
      ''' For reading the input from arduino '''
+     s = serial.Serial("/dev/ttyUSB0",9600)
      t = s.read(1)
      val = str(t).strip("b'").strip("\\n").strip("\\r")
      #print(t)
@@ -92,67 +93,72 @@ if __name__ == "__main__":
        right.start(25)
        GPIO.output(Motor1A,GPIO.LOW)
        GPIO.output(Motor1B,GPIO.HIGH)
-       left.ChangeDutyCycle(100)
+       left.ChangeDutyCycle(25)
        GPIO.output(Motor2A,GPIO.LOW)
        GPIO.output(Motor2B,GPIO.HIGH)
-       right.ChangeDutyCycle(100)
+       right.ChangeDutyCycle(25)
      if (val == 'L'):
+       print("Hard right")
+       left.start(25)
+       right.start(25)
+       GPIO.output(Motor1A,GPIO.LOW)
+       GPIO.output(Motor1B,GPIO.HIGH)
+       left.ChangeDutyCycle(35)
+       GPIO.output(Motor2A,GPIO.LOW)
+       GPIO.output(Motor2B,GPIO.HIGH)
+       right.ChangeDutyCycle(25)
+     if (val == 'l'):
+       print("Soft right")
+       left.start(25)
+       right.start(25)
+       GPIO.output(Motor1A,GPIO.LOW)
+       GPIO.output(Motor1B,GPIO.HIGH)
+       left.ChangeDutyCycle(30)
+       GPIO.output(Motor2A,GPIO.LOW)
+       GPIO.output(Motor2B,GPIO.HIGH)
+       right.ChangeDutyCycle(25)
+     if (val == 'R'):
        print("Hard left")
        left.start(25)
-       right.start(35)
+       right.start(25)
        GPIO.output(Motor1A,GPIO.LOW)
        GPIO.output(Motor1B,GPIO.HIGH)
-       left.ChangeDutyCycle(100)
+       left.ChangeDutyCycle(25)
        GPIO.output(Motor2A,GPIO.LOW)
        GPIO.output(Motor2B,GPIO.HIGH)
-       right.ChangeDutyCycle(100)
-     if (val == 'l'):
+       right.ChangeDutyCycle(35)
+     if (val == 'r'):
        print("Soft left")
        left.start(25)
-       right.start(30)
-       GPIO.output(Motor1A,GPIO.LOW)
-       GPIO.output(Motor1B,GPIO.HIGH)
-       left.ChangeDutyCycle(100)
-       GPIO.output(Motor2A,GPIO.LOW)
-       GPIO.output(Motor2B,GPIO.HIGH)
-       right.ChangeDutyCycle(100)
-     if (val == 'R'):
-       print("Hard right")
-       left.start(35)
        right.start(25)
        GPIO.output(Motor1A,GPIO.LOW)
        GPIO.output(Motor1B,GPIO.HIGH)
-       left.ChangeDutyCycle(100)
+       left.ChangeDutyCycle(25)
        GPIO.output(Motor2A,GPIO.LOW)
        GPIO.output(Motor2B,GPIO.HIGH)
-       right.ChangeDutyCycle(100)
-     if (val == 'r'):
-       print("Motor in forward direction")
-       left.start(30)
-       right.start(25)
-       GPIO.output(Motor1A,GPIO.LOW)
-       GPIO.output(Motor1B,GPIO.HIGH)
-       left.ChangeDutyCycle(100)
-       GPIO.output(Motor2A,GPIO.LOW)
-       GPIO.output(Motor2B,GPIO.HIGH)
-       right.ChangeDutyCycle(100)
-
+       right.ChangeDutyCycle(30)
+     if (val == 'v'):
+       
+       continue
 
      if (val == 'S'):
-       if (Y==0 || Y==1):
+       if (Y==0 or Y==1 ):
+         Y = Y+1  
          print("Motor in forward direction")
          left.start(25)
          right.start(25)
          GPIO.output(Motor1A,GPIO.LOW)
          GPIO.output(Motor1B,GPIO.HIGH)
-         left.ChangeDutyCycle(100)
+         left.ChangeDutyCycle(30)
          GPIO.output(Motor2A,GPIO.LOW)
          GPIO.output(Motor2B,GPIO.HIGH)
-         right.ChangeDutyCycle(100)
-			
-			
-       if (Y==2):
+         right.ChangeDutyCycle(25)
+         print(Y)
+         sleep(0.8)   
+            
+       if (Y == 2 ):
          print("Stop")
+         print(Y)
          left.start(0)
          right.start(0)
          GPIO.output(Motor1A,GPIO.LOW)
@@ -161,7 +167,7 @@ if __name__ == "__main__":
          GPIO.output(Motor2A,GPIO.LOW)
          GPIO.output(Motor2B,GPIO.HIGH)
          right.ChangeDutyCycle(0)
-
+         
          '''for i in range(1,2):
            SetAngle(i*45)
            snap(i)
@@ -169,15 +175,15 @@ if __name__ == "__main__":
            fo = open("eYRC#AB#183.csv", "a")
            fo.write('SIM '+str(i-1)+","+"Detected")
            fo.close()'''
-           '''	
-           left.start(25)
-           right.start(25)
-           GPIO.output(Motor1A,GPIO.LOW)
-           GPIO.output(Motor1B,GPIO.HIGH)
-           left.ChangeDutyCycle(100)
-           GPIO.output(Motor2A,GPIO.HIGH)
-           GPIO.output(Motor2B,GPIO.LOW)
-           right.ChangeDutyCycle(100)
-           '''
-     Y = Y+1
-GPIO.cleanup()	
+             
+         left.start(25)
+         right.start(25)
+         GPIO.output(Motor1A,GPIO.LOW)
+         GPIO.output(Motor1B,GPIO.HIGH)
+         left.ChangeDutyCycle(50)
+         GPIO.output(Motor2A,GPIO.HIGH)
+         GPIO.output(Motor2B,GPIO.LOW)
+         right.ChangeDutyCycle(50)
+        
+     
+GPIO.cleanup()  
